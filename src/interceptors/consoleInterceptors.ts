@@ -1,4 +1,4 @@
-import { ConsoleInvocation } from "../proxy/consoleProxy";
+import { ConsoleInvocation, consoleLogFnNames } from "../proxy/consoleProxy";
 
 export type LogLevel = "log" | "info" | "warn" | "debug" | "error";
 
@@ -7,8 +7,6 @@ export type LogEnablementInterceptor = {
   setLevelEnabled(level: LogLevel | "all", enabled: boolean): void;
   setAllLevelsEnabled(enabled: boolean): void;
 };
-
-const logFnNames = ["log", "info", "warn", "debug", "error"];
 
 export function createLogEnablementInterceptor(
   targetConsole: Pick<
@@ -51,7 +49,7 @@ export function createLogEnablementInterceptor(
 
   const interceptor: LogEnablementInterceptor = {
     invoke(invocation) {
-      if (logFnNames.includes(invocation.fnName)) {
+      if (consoleLogFnNames.includes(invocation.fnName)) {
         return log(invocation.fnName as LogLevel, invocation.args);
       }
 

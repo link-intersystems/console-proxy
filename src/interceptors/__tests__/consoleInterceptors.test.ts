@@ -139,8 +139,7 @@ describe("ConsoleHandler Tests", () => {
   });
 
   test("proceed non log functions", () => {
-
-    logEnablementInterceptor.invoke(invocation("clear", []))
+    logEnablementInterceptor.invoke(invocation("clear", []));
 
     expect(consoleMock.clear).toHaveBeenCalledTimes(1);
   });
@@ -188,7 +187,7 @@ describe("ConsoleHandler Tests", () => {
     function proceed(proceedArgs?: any[]) {
       return (consoleMock[fnName] as any).apply(
         consoleMock,
-        proceedArgs ?? args
+        proceedArgs ? proceedArgs : args
       );
     }
 

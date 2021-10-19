@@ -33,6 +33,14 @@ export type ConsoleProxy = Console & {
   setTargetConsole: (target: Partial<Console>) => void;
 };
 
+export const consoleLogFnNames = Object.freeze([
+  "log",
+  "info",
+  "warn",
+  "debug",
+  "error",
+]);
+
 export const consoleFnNames = Object.freeze([
   "assert",
   "clear",
