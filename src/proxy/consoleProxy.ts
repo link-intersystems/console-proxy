@@ -102,11 +102,6 @@ export function createConsoleProxy(
 
       const targetFn = (origTargetConsoleFunctions as any)[fnName];
 
-      if (targetFn == null) {
-        const msg = `Target object doesn't have a function named ${targetFn}`;
-        throw new Error(msg);
-      }
-
       function proceed(invokeWithArgs?: any[]) {
         const effectiveArgs = invokeWithArgs ?? args;
         return targetFn.apply(origTargetConsoleFunctions, effectiveArgs);
