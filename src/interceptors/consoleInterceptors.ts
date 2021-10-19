@@ -1,4 +1,4 @@
-import { ConsoleInterceptorObj, ConsoleInvocation } from "index";
+import { ConsoleInvocation } from "../proxy/consoleProxy";
 
 export type LogLevel = "log" | "info" | "warn" | "debug" | "error";
 
