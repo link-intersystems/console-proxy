@@ -82,7 +82,7 @@ export function createConsoleProxy(
 
   function getInterceptor(fnName: string): ConsoleInterceptor | undefined {
     const fnInterceptor = fnInterceptors.get(fnName);
-    return fnInterceptor ?? defaultInterceptor;
+    return fnInterceptor ? fnInterceptor : defaultInterceptor;
   }
 
   function invokeInterceptor(
