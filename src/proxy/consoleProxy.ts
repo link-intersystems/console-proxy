@@ -1,28 +1,36 @@
-export type UnregisterHandler = () => void;
+export type UnregisterConsoleInterceptor = () => void;
 
 export type ConsoleFunctionName = keyof Console;
 
-export type HandlerInvocation = {
-  target: Console;
-  targetFn: (...args: any[]) => any;
-  targetFnName: ConsoleFunctionName;
+export type ConsoleInvocation = {
+  target: Partial<Console>;
+  fn: (...args: any[]) => any;
+  fnName: ConsoleFunctionName;
   args: any[];
+  proceed: (args?: any[]) => any;
 };
-export type Handler = (invocation: HandlerInvocation) => any;
 
-export type DefaultHandler = Handler | Partial<Console>;
+export type ConsoleInterceptorFn = (invocation: ConsoleInvocation) => any;
+export type ConsoleInterceptorObj = {
+  invoke: ConsoleInterceptorFn;
+};
+
+export type ConsoleInterceptor = ConsoleInterceptorFn | ConsoleInterceptorObj;
+
+export type DefaultConsoleInterceptor = ConsoleInterceptor | Partial<Console>;
 
 export type ConsoleProxy = Console & {
-  setDefaultHandler: (handler?: Handler | Partial<Console>) => void;
-  setDirectFunctionHandler(
+  setInterceptor: (interceptor?: ConsoleInterceptor | Partial<Console>) => void;
+  setInterceptorFunction(
     fnName: ConsoleFunctionName,
-    handler: (...args: any[]) => any
-  ): UnregisterHandler;
-  setFunctionHandler(
+    interceptorFn: (...args: any[]) => any
+  ): UnregisterConsoleInterceptor;
+  setFunctionInterceptor(
     fnName: ConsoleFunctionName,
-    handler: Handler
-  ): UnregisterHandler;
+    interceptor: ConsoleInterceptor
+  ): UnregisterConsoleInterceptor;
   getTargetConsole: () => Console;
+  setTargetConsole: (target: Partial<Console>) => void;
 };
 
 export const consoleFnNames = Object.freeze([
@@ -51,80 +59,118 @@ export const consoleFnNames = Object.freeze([
   "warn",
 ]);
 
-const passthroughHandler = (invocation: HandlerInvocation) => {
-  return invocation.targetFn.apply(invocation.target, invocation.args);
-};
-
 export function createConsoleProxy(
-  targetConsole: Console = console,
-  defaultHandlerArg: DefaultHandler = passthroughHandler
+  targetConsole: Partial<Console> = console,
+  defaultConsoleInterceptor?: DefaultConsoleInterceptor
 ): ConsoleProxy {
-  const origTargetConsoleFunctions = { ...targetConsole };
+  let origTargetConsoleFunctions: Partial<Console>;
+  let targetConsoleToUse: Partial<Console>;
 
-  const getTargetConsole = () => targetConsole;
+  setTargetConsole(targetConsole);
 
-  let defaultHandler: Handler;
+  function getTargetConsole() {
+    return targetConsole;
+  }
 
-  const fnHandlers = new Map<string, Handler>();
+  function setTargetConsole(target: Partial<Console>) {
+    origTargetConsoleFunctions = { ...target };
+    targetConsoleToUse = target;
+  }
 
-  function getHandler(fnName: string): Handler {
-    const fnHandler = fnHandlers.get(fnName);
-    return fnHandler ? fnHandler : defaultHandler;
+  let defaultInterceptor: ConsoleInterceptor | undefined;
+  const fnInterceptors = new Map<string, ConsoleInterceptor>();
+
+  function getInterceptor(fnName: string): ConsoleInterceptor | undefined {
+    const fnInterceptor = fnInterceptors.get(fnName);
+    return fnInterceptor ?? defaultInterceptor;
+  }
+
+  function invokeInterceptor(
+    interceptor: ConsoleInterceptor,
+    invocation: ConsoleInvocation
+  ) {
+    if ("invoke" in interceptor) {
+      return interceptor.invoke(invocation);
+    }
+
+    return interceptor(invocation);
   }
 
   function createProxyFn(fnName: ConsoleFunctionName): any {
-    const targetFn = (origTargetConsoleFunctions as any)[fnName];
+    const proxyFn = function () {
+      const args = Array.from(arguments) as [];
 
-    return function () {
-      const handler = getHandler(fnName);
+      const targetFn = (origTargetConsoleFunctions as any)[fnName];
 
-      return handler({
+      if (targetFn == null) {
+        const msg = `Target object doesn't have a function named ${targetFn}`;
+        throw new Error(msg);
+      }
+
+      function proceed(invokeWithArgs?: any[]) {
+        const effectiveArgs = invokeWithArgs ?? args;
+        return targetFn.apply(origTargetConsoleFunctions, effectiveArgs);
+      }
+
+      const invocation: ConsoleInvocation = {
         target: origTargetConsoleFunctions,
-        targetFn,
-        targetFnName: fnName,
-        args: Array.from(arguments) as [],
-      });
+        fn: targetFn,
+        fnName: fnName,
+        args,
+        proceed,
+      };
+
+      const interceptor = getInterceptor(fnName);
+
+      return interceptor
+        ? invokeInterceptor(interceptor, invocation)
+        : invocation.proceed();
     };
+
+    return proxyFn;
   }
 
-  function setDefaultHandler(
-    handler: Handler | Partial<Console> = passthroughHandler
-  ) {
-    if (typeof handler === "function") {
-      defaultHandler = handler;
+  function setInterceptor(interceptor?: ConsoleInterceptor | Partial<Console>) {
+    if (interceptor == null) {
+      defaultInterceptor = undefined;
+    } else if ("invoke" in interceptor || typeof interceptor === "function") {
+      defaultInterceptor = interceptor;
     } else {
-      defaultHandler = function (invocation: HandlerInvocation) {
-        const handlerFn = handler[invocation.targetFnName] as <R>() => R;
-        return handlerFn.apply(handler, invocation.args as []);
+      defaultInterceptor = {
+        invoke(invocation: ConsoleInvocation) {
+          const targetObj = interceptor as any;
+          const interceptorFn = targetObj[invocation.fnName] as <R>() => R;
+          return interceptorFn.apply(interceptor, invocation.args as []);
+        },
       };
     }
   }
 
-  function setDirectFunctionHandler(
+  function setInterceptorFunction(
     fnName: ConsoleFunctionName,
-    handler: (...args: any[]) => any
+    interceptorFn: (...args: any[]) => any
   ) {
-    if (!(fnName in targetConsole)) {
+    if (!(fnName in targetConsoleToUse)) {
       const msg = `Console doesn't have a function named ${fnName}`;
       throw new Error(msg);
     }
 
-    const handlerFunction = function (invocation: HandlerInvocation) {
-      return handler.apply(proxy, invocation.args);
+    const functionInterceptor = {
+      invoke(invocation: ConsoleInvocation) {
+        return interceptorFn.apply(proxy, invocation.args);
+      },
     };
 
-    return setFunctionHandler(fnName, handlerFunction);
+    return setFunctionInterceptor(fnName, functionInterceptor);
   }
 
-  function setFunctionHandler(fnName: string, handler: Handler) {
-    if (!(fnName in targetConsole)) {
-      const msg = `Console doesn't have a function named ${fnName}`;
-      throw new Error(msg);
-    }
-
-    fnHandlers.set(fnName, handler);
+  function setFunctionInterceptor(
+    fnName: ConsoleFunctionName,
+    interceptor: ConsoleInterceptor
+  ) {
+    fnInterceptors.set(fnName, interceptor);
     return () => {
-      fnHandlers.delete(fnName);
+      fnInterceptors.delete(fnName);
     };
   }
 
@@ -137,14 +183,15 @@ export function createConsoleProxy(
       return proxy;
     },
     {
-      setDirectFunctionHandler,
-      setFunctionHandler,
-      setDefaultHandler,
+      setInterceptorFunction,
+      setFunctionInterceptor,
+      setInterceptor,
       getTargetConsole,
+      setTargetConsole,
     } as ConsoleProxy
   );
 
-  setDefaultHandler(defaultHandlerArg);
+  setInterceptor(defaultConsoleInterceptor);
 
   return proxy;
 }

@@ -9,33 +9,33 @@ The consoleProxy module provides support for intercepting a console, usually the
 
 ## createConsoleProxy
 
-Create a console proxy based on the default console.
+Create a console proxy with the default console as target.
 
     const consoleProxy = createConsoleProxy();
 
-Create a console proxy based on an object that fulfills the [console API](https://developer.mozilla.org/en-US/docs/Web/API/Console).
+Create a console proxy with a custom target object that fulfills the [console API](https://developer.mozilla.org/en-US/docs/Web/API/Console).
 
     const someOtherConsole = ... // another object with the console API
     const consoleProxy = createConsoleProxy(someOtherConsole);
 
-Create a console proxy with a default handler. The default handler can also be set later with `ConsoleProxy.setDefaultHandler`.
+Create a console proxy with an interceptor that intercepts calls to the target console. The interceptor can also be set later with `ConsoleProxy.setInterceptor`.
 
     const logEnablementHandler = createLogEnablementHandler();
     const consoleProxy = createConsoleProxy(console, logEnablementHandler);
 
-## ConsoleProxy.setDefaultHandler(handler?: Handler | Partial<Console>) => void;
+## ConsoleProxy.setInterceptor(interceptor?: ConsoleInterceptor | Partial<Console>) => void;
 
-The default handler will handle all invocations if no specific handler is registered. To register a specific handler see `ConsoleProxy.setFunctionHandler` and `ConsoleProxy.setDirectFunctionHandler`
+The interceptor will intercept all invocations if no function interceptor is registered. To register a function interceptor see `ConsoleProxy.setInterceptorFunction` and `ConsoleProxy.setFunctionInterceptor`
 
-## ConsoleProxy.setFunctionHandler(fnName: ConsoleFunctionName, handler: Handler): UnregisterHandler;
+## ConsoleProxy.setFunctionInterceptor(fnName: ConsoleFunctionName, interceptor: ConsoleInterceptor): UnregisterHandler;
 
-Register a function handler for a specific function. A function handler has access to the invocation context and therefore can be used to implement more complex logic in contrast to a `ConsoleProxy.setDirectFunctionHandler`.
+Register a function interceptor for a specific function. A function interceptor has access to the invocation context and therefore can be used to implement more complex logic in contrast to a `ConsoleProxy.setInterceptorFunction`.
 
     // Prefix all info logs with >>
-    consoleProxy.setFunctionHandler("info", (invocation) => {
+    consoleProxy.setInterceptorFunction("info", (invocation) => {
         const argMsg = invocation.args.join(" ");
         const msg = `>> ${argMsg}`;
-        return invocation.targetFn.apply(invocation.target, [msg]);
+        return invocation.proceed([msg]);
     });
 
     consoleProxy.log("Hello World");
@@ -45,16 +45,21 @@ Register a function handler for a specific function. A function handler has acce
     // Hello World
     // >> Hello World
 
-## ConsoleProxy.setDirectFunctionHandler(fnName: ConsoleFunctionName,  handler: (...args: any[]) => any): UnregisterHandler;
+## ConsoleProxy.setInterceptorFunction(fnName: ConsoleFunctionName, interceptorFn: (...args: any[]) => any): UnregisterHandler;
 
-A direct function handler is a more simple API of the function handler. You only have to provide a function with target function's signature.
+An interceptor function is a more simple API of the function interceptor. You only have to provide a function with the target function's signature.
 
     let lastInfoLog: string = ""
 
-    consoleProxy.setDirectFunctionHandler("info", (...args) => {
+    consoleProxy.setInterceptorFunction("info", (...args) => {
         lastInfoLog = args.join(" ");
     });
 
     consoleProxy.info("Hello", "World");
 
     // value of lastInfoLog is "Hello World". Nothing is logged.
+
+## ConsoleProxy.setTargetConsole(console: Partial<Console>): void;
+
+Set the target console to the specified console,
+

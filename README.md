@@ -19,20 +19,21 @@ The console template module provides template methods that ensure that the conso
 The consoleProxy module provides support for intercepting a console, usually the default console. [Read more](src/proxy/README.md)
 
     let lastInfoLog: string;
- 
+
     const consoleProxy = createConsoleProxy();
-    consoleProxy.setDirectFunctionHandler("info", (...args) => {
+    consoleProxy.setInterceptorFunction("info", (...args) => {
         lastInfoLog = args.join(" ");
     })
 
-    consoleProxy.setDirectFunctionHandler("log", (...args) => {
+    consoleProxy.setInterceptorFunction("log", (...args) => {
         // log diabled
     })
 
+## Console Proxy Interceptors
 
-## Console Proxy Handlers
+This module contains interceptors for the [ConsoleProxy](../proxy/README.md). [Read more](src/interceptors/README.md)
 
-This module contains useful proxy handlers for the [ConsoleProxy](src/proxy/README.md). [Read more](src/handler/README.md)
+     const logEnablementInterceptor = createLogEnablementInterceptor();
+     logEnablementInterceptor.setLevelEnabled("log", false);
 
-     const logEnablementHandler = createLogEnablementHandler();
-     logEnablementHandler.setLevelEnabled("log", false);
+     consoleProxy.setInterceptor(logEnablementInterceptor);

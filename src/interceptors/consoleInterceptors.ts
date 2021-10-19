@@ -1,16 +1,21 @@
+import { ConsoleInterceptorObj, ConsoleInvocation } from "index";
+
 export type LogLevel = "log" | "info" | "warn" | "debug" | "error";
 
-export type LogEnablementHandler = Pick<
-  Console,
-  "info" | "warn" | "log" | "debug" | "error"
-> & {
+export type LogEnablementInterceptor = {
+  invoke(invocation: ConsoleInvocation): any;
   setLevelEnabled(level: LogLevel | "all", enabled: boolean): void;
   setAllLevelsEnabled(enabled: boolean): void;
 };
 
-export function createLogEnablementHandler(
-  targetConsole: Console = console
-): LogEnablementHandler {
+const logFnNames = ["log", "info", "warn", "debug", "error"];
+
+export function createLogEnablementInterceptor(
+  targetConsole: Pick<
+    Console,
+    "log" | "info" | "warn" | "debug" | "error"
+  > = console
+): LogEnablementInterceptor {
   const targetConsoleFunctions = { ...targetConsole };
 
   const levelEnablement = new Map<LogLevel, boolean>();
@@ -37,21 +42,24 @@ export function createLogEnablementHandler(
   };
 
   function log(level: LogLevel, args: any[]) {
-    if (levelEnablement.get(level)) {
+    const enabled = levelEnablement.get(level);
+    if (enabled) {
       const targetFn = targetConsoleFunctions[level];
       return targetFn.apply(targetConsole, args);
     }
   }
 
-  return {
-    log: function () {
-      log.apply(this, ["log", Array.from(arguments)]);
+  const interceptor: LogEnablementInterceptor = {
+    invoke(invocation) {
+      if (logFnNames.includes(invocation.fnName)) {
+        return log(invocation.fnName as LogLevel, invocation.args);
+      }
+
+      return invocation.proceed();
     },
-    info: (...args: any[]) => log("info", args),
-    warn: (...args: any[]) => log("warn", args),
-    error: (...args: any[]) => log("error", args),
-    debug: (...args: any[]) => log("debug", args),
     setLevelEnabled,
     setAllLevelsEnabled,
   };
+
+  return interceptor;
 }
