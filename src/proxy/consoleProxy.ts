@@ -103,7 +103,7 @@ export function createConsoleProxy(
       const targetFn = (origTargetConsoleFunctions as any)[fnName];
 
       function proceed(invokeWithArgs?: any[]) {
-        const effectiveArgs = invokeWithArgs ?? args;
+        const effectiveArgs = invokeWithArgs ? invokeWithArgs : args;
         return targetFn.apply(origTargetConsoleFunctions, effectiveArgs);
       }
 
