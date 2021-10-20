@@ -68,22 +68,30 @@ export const consoleFnNames = Object.freeze([
 ]);
 
 export function createConsoleProxy(
-  targetConsole: Partial<Console> = console,
+  targetConsoleArg: Partial<Console> = console,
   defaultConsoleInterceptor?: DefaultConsoleInterceptor
 ): ConsoleProxy {
-  let origTargetConsoleFunctions: Partial<Console>;
-  let targetConsoleToUse: Partial<Console>;
-
-  setTargetConsole(targetConsole);
+  let targetFunctions: Partial<Console>;
+  let targetConsole: Partial<Console>;
 
   function getTargetConsole() {
-    return targetConsole;
+    return targetConsoleArg;
   }
 
   function setTargetConsole(target: Partial<Console>) {
-    origTargetConsoleFunctions = { ...target };
-    targetConsoleToUse = target;
+    targetFunctions = { ...target };
+    targetConsole = target;
   }
+
+  function getTargetFunction(fnName: ConsoleFunctionName) {
+    return (targetFunctions as any)[fnName];
+  }
+
+  function getTargetFunctions() {
+    return targetFunctions;
+  }
+
+  setTargetConsole(targetConsoleArg);
 
   let defaultInterceptor: ConsoleInterceptor | undefined;
   const fnInterceptors = new Map<string, ConsoleInterceptor>();
@@ -108,15 +116,15 @@ export function createConsoleProxy(
     const proxyFn = function () {
       const args = Array.from(arguments) as [];
 
-      const targetFn = (origTargetConsoleFunctions as any)[fnName];
+      const targetFn = getTargetFunction(fnName);
 
       function proceed(invokeWithArgs?: any[]) {
         const effectiveArgs = invokeWithArgs ? invokeWithArgs : args;
-        return targetFn.apply(origTargetConsoleFunctions, effectiveArgs);
+        return targetFn.apply(targetFunctions, effectiveArgs);
       }
 
       const invocation: ConsoleInvocation = {
-        target: origTargetConsoleFunctions,
+        target: getTargetFunctions(),
         fn: targetFn,
         fnName: fnName,
         args,
@@ -141,8 +149,8 @@ export function createConsoleProxy(
     } else {
       defaultInterceptor = {
         invoke(invocation: ConsoleInvocation) {
-          const targetObj = interceptor as any;
-          const interceptorFn = targetObj[invocation.fnName] as <R>() => R;
+          const partialConsole = interceptor as Partial<Console>;
+          const interceptorFn = partialConsole[invocation.fnName] as <R>() => R;
           return interceptorFn.apply(interceptor, invocation.args as []);
         },
       };
@@ -153,7 +161,8 @@ export function createConsoleProxy(
     fnName: ConsoleFunctionName,
     interceptorFn: (...args: any[]) => any
   ) {
-    if (!(fnName in targetConsoleToUse)) {
+    const targetFunctions = getTargetFunctions();
+    if (!(fnName in targetFunctions)) {
       const msg = `Console doesn't have a function named ${fnName}`;
       throw new Error(msg);
     }
@@ -179,7 +188,7 @@ export function createConsoleProxy(
 
   const proxy = consoleFnNames.reduce(
     (proxy, fn) => {
-      if (origTargetConsoleFunctions[fn as ConsoleFunctionName]) {
+      if (targetFunctions[fn as ConsoleFunctionName]) {
         const proxyFn = createProxyFn(fn as ConsoleFunctionName);
         (proxy as any)[fn] = proxyFn.bind(proxy);
       }
