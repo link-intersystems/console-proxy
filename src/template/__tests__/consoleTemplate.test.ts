@@ -2,7 +2,7 @@ import { ConsoleProxy, createConsoleProxy } from "../../proxy/consoleProxy";
 import { createConsoleTemplate, ConsoleTemplate } from "../consoleTemplate";
 import { createConsoleMock } from "../../proxy/__tests__/consoleProxy.test";
 
-describe("ConsoleProxyControl Tests", () => {
+describe("ConsoleTemplate Tests", () => {
   let proxyTargetMock: Console;
   let proxy: ConsoleProxy;
   let consoleTemplate: ConsoleTemplate;

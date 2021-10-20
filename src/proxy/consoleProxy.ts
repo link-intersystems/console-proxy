@@ -31,6 +31,8 @@ export type ConsoleProxy = Console & {
   ): UnregisterConsoleInterceptor;
   getTargetConsole: () => Console;
   setTargetConsole: (target: Partial<Console>) => void;
+  enableProxy(): DisableProxy;
+  isProxyEnabled(): boolean;
 };
 
 export const consoleLogFnNames = Object.freeze([
@@ -66,6 +68,13 @@ export const consoleFnNames = Object.freeze([
   "trace",
   "warn",
 ]);
+
+export type DisableProxy = () => void;
+
+type ProxyFunction = {
+  name: ConsoleFunctionName;
+  fn: any;
+};
 
 export function createConsoleProxy(
   targetConsoleArg: Partial<Console> = console,
@@ -204,6 +213,57 @@ export function createConsoleProxy(
   );
 
   setInterceptor(defaultConsoleInterceptor);
+
+  function createProxyFunctions(target: any): ProxyFunction[] {
+    const proxyFunctions: ProxyFunction[] = [];
+
+    consoleFnNames.forEach((fnName) => {
+      if (typeof target[fnName] === "function") {
+        const proxyFn = function () {
+          return (target as any)[fnName].apply(target, arguments);
+        };
+        proxyFunctions.push({
+          name: fnName as ConsoleFunctionName,
+          fn: proxyFn,
+        });
+      }
+    });
+
+    return proxyFunctions;
+  }
+
+  const proxyFunctions = createProxyFunctions(proxy);
+
+  function isProxyEnabled() {
+    return proxyFunctions
+      .map((pf) => (targetConsole as any)[pf.name] === pf.fn)
+      .every((e) => e === true);
+  }
+
+  function enableProxy(): DisableProxy {
+    const targetFunctions = getTargetFunctions();
+    const disableProxy = () => {
+      if (isProxyEnabled())
+        proxyFunctions.forEach(
+          (pf) =>
+            // eslint-disable-next-line no-native-reassign
+            ((targetConsole as any)[pf.name] = targetFunctions[pf.name])
+        );
+    };
+
+    if (isProxyEnabled()) {
+      return disableProxy;
+    }
+
+    proxyFunctions.forEach(
+      (pf) => (targetConsole[pf.name as ConsoleFunctionName] = pf.fn)
+    );
+
+    return disableProxy;
+  }
+
+  proxy.enableProxy = enableProxy;
+  proxy.isProxyEnabled = isProxyEnabled;
 
   return proxy;
 }

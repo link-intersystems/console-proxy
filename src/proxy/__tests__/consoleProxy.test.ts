@@ -193,6 +193,38 @@ describe("ConsoleProxy Tests", () => {
     );
   });
 
+  test("enable/disable", () => {
+    const logFnHandlerMock = jest.fn();
+    consoleProxy.setInterceptorFunction("log", logFnHandlerMock);
+    const disableProxy = consoleProxy.enableProxy();
+
+    consoleMock.log("test");
+
+    expect(logFnHandlerMock).toHaveBeenCalledWith("test");
+
+    disableProxy();
+
+    consoleMock.log("test2");
+    expect(logFnHandlerMock).not.toHaveBeenCalledWith("test2");
+  });
+
+  test("enable/disable twice", () => {
+    const logFnHandlerMock = jest.fn();
+    consoleProxy.setInterceptorFunction("log", logFnHandlerMock);
+    const disableProxy1 = consoleProxy.enableProxy();
+    const disableProxy2 = consoleProxy.enableProxy();
+
+    consoleMock.log("test");
+
+    expect(logFnHandlerMock).toHaveBeenCalledWith("test");
+
+    disableProxy1();
+    disableProxy2();
+
+    consoleMock.log("test2");
+    expect(logFnHandlerMock).not.toHaveBeenCalledWith("test2");
+  });
+
   test("assert", () => {
     testConsoleMethod("assert", true, {
       msg: "assertCalled",
