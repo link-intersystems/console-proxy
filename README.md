@@ -5,7 +5,46 @@
 ![GitHub issues](https://img.shields.io/github/issues-raw/link-intersystems/console-redirection)
 [![GitHub](https://img.shields.io/github/license/link-intersystems/console-redirection?label=license)](LICENSE.md)
 
-A library to intercept console function calls and redirect them wherever you like.
+A library to intercept console function calls.
+
+## Install
+
+     npm i "@link-intersystems/console-redirection"
+
+## Use
+
+    import {
+        createConsoleProxy,
+        createConsoleTemplate,
+        createLogEnablementInterceptor,
+    } from "@link-intersystems/console-redirection";
+
+    const logEnablement = createLogEnablementInterceptor();
+    const consoleProxy = createConsoleProxy(console, logEnablement);
+
+    logEnablement.setLevelEnabled("debug", false)
+
+
+    consoleProxy.info("INFO", "Hello", "World");
+    // Since debug is disabled only info is logged.
+    consoleProxy.debug("DEBUG", "Hellow", "World");     
+    // OUTPUT:
+    // INFO Hello World
+
+A consoleProxy does not change the default console. 
+If you want to change the default console 
+you can use the console template.
+
+    function codeThatLogs() {
+        console.log("Hello");
+        console.info("World");
+    }
+
+    logEnablement.setLevelEnabled("info", false)
+
+    consoleTemplate.execFn(codeThatLogs)
+    // OUTPUT:
+    // Hello
 
 ## Console Template Module
 
