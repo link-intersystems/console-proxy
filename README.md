@@ -32,7 +32,7 @@ A library to intercept console function calls.
     // INFO Hello World
 
 A consoleProxy does not change the default console. 
-If you want to change the default console you can either use the console template
+If you want to change the default console you can either use the [console template](src/template/README.md)
 
     function codeThatLogs() {
         console.log("Hello");
@@ -45,7 +45,7 @@ If you want to change the default console you can either use the console templat
     // OUTPUT:
     // Hello
 
-or manually enable/disable the console proxy.
+or manually enable/disable the [console proxy](src/proxy/README.md).
 
     const disableConsoleProxy = consoleProxy.enable();
     // The target console's functions will be redirected through the proxy.
