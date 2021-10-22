@@ -19,14 +19,14 @@ export function createConsoleTemplate(
     try {
       return fn();
     } finally {
-      disableProxy?.();
+      if (disableProxy) disableProxy();
     }
   };
 
   const wrapFn = <R = any>(fn: ANY_FN<any, R>) => {
     return function () {
       const args = Array.from(arguments);
-      return execFn(() => (fn as any).apply((fn as any).this , args));
+      return execFn(() => (fn as any).apply((fn as any).this, args));
     };
   };
 
