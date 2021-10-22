@@ -22,7 +22,7 @@ const config = [
   {
     input: "src/index.ts",
     output: {
-      file: "lib/console-redirection.js",
+      file: "lib/console-proxy.js",
       format: "cjs",
       indent: false,
     },
@@ -45,7 +45,7 @@ const config = [
   // ES
   {
     input: "src/index.ts",
-    output: { file: "es/console-redirection.js", format: "es", indent: false },
+    output: { file: "es/console-proxy.js", format: "es", indent: false },
     external: makeExternalPredicate([
       ...Object.keys(pkg.dependencies || {}),
       ...Object.keys(pkg.peerDependencies || {}),
@@ -65,7 +65,7 @@ const config = [
   // ES for Browsers
   {
     input: "src/index.ts",
-    output: { file: "es/console-redirection.mjs", format: "es", indent: false },
+    output: { file: "es/console-proxy.mjs", format: "es", indent: false },
     plugins: [
       nodeResolve({
         extensions,
@@ -96,7 +96,7 @@ const config = [
   {
     input: "src/index.ts",
     output: {
-      file: "dist/console-redirection.js",
+      file: "dist/console-proxy.js",
       format: "umd",
       name: "Console Redirection",
       indent: false,
@@ -122,7 +122,7 @@ const config = [
   {
     input: "src/index.ts",
     output: {
-      file: "dist/console-redirection.min.js",
+      file: "dist/console-proxy.min.js",
       format: "umd",
       name: "Console Redirection",
       indent: false,
