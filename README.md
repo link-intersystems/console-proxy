@@ -1,4 +1,4 @@
-# Console Redirection
+# Console Proxy Library
 
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/link-intersystems/console-proxy/Node.js%20CI)
 ![Coveralls](https://img.shields.io/coveralls/github/link-intersystems/console-proxy)
@@ -26,14 +26,13 @@ A library to intercept console function calls.
 
 
     consoleProxy.info("INFO", "Hello", "World");
-    // Since debug is disabled only info is logged.
     consoleProxy.debug("DEBUG", "Hellow", "World");     
+    // Since debug is disabled only info is logged.
     // OUTPUT:
     // INFO Hello World
 
 A consoleProxy does not change the default console. 
-If you want to change the default console 
-you can use the console template.
+If you want to change the default console you can either use the console template
 
     function codeThatLogs() {
         console.log("Hello");
@@ -45,6 +44,18 @@ you can use the console template.
     consoleTemplate.execFn(codeThatLogs)
     // OUTPUT:
     // Hello
+
+or manually enable/disable the console proxy.
+
+    const disableConsoleProxy = consoleProxy.enable();
+    // The target console's functions will be redirected through the proxy.
+
+    console.log("Hello", "World"); // is proxied
+
+    disableConsoleProxy();
+    // The target console's functions are restored.
+
+    console.log("Hello", "World"); // is not proxied
 
 ## Console Template Module
 
