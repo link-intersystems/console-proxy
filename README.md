@@ -81,7 +81,7 @@ The consoleProxy module provides support for intercepting a console, usually the
 
 ## Console Proxy Interceptors
 
-This module contains interceptors for the [ConsoleProxy](../proxy/README.md). [Read more](src/interceptors/README.md)
+This module contains interceptors for the console proxy. [Read more](src/interceptors/README.md)
 
      const logEnablementInterceptor = createLogEnablementInterceptor();
      logEnablementInterceptor.setLevelEnabled("log", false);
