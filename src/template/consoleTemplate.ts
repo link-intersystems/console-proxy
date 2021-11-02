@@ -19,7 +19,7 @@ export function createConsoleTemplate(
       : consoleProxy.enableProxy();
     try {
       const fnThis = (fn as any).this;
-      return fn.apply<any, A, R>(fnThis, args);
+      return fn.apply(fnThis, args);
     } finally {
       if (disableProxy) disableProxy();
     }
