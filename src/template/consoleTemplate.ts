@@ -1,32 +1,34 @@
 import { ConsoleProxy } from "../proxy/consoleProxy";
 
-type ANY_FN<A = any, R = any> = (
-  fn: (...args: A[]) => R
-) => (...args: A[]) => R;
+type ANY_FN<A extends any[], R = any> = (...args: A) => R;
 
 export type ConsoleTemplate = {
-  execFn: ANY_FN;
-  wrapFn: ANY_FN;
+  execFn: <A extends any[], R>(fn: ANY_FN<A, R>, ...args: A) => R;
+  wrapFn: <A extends any[], R>(fn: ANY_FN<A, R>) => ANY_FN<A, R>;
 };
 
 export function createConsoleTemplate(
   consoleProxy: ConsoleProxy
 ): ConsoleTemplate {
-  const execFn = <R = any>(fn: () => R): R => {
+  const execFn = <A extends any[] = any[], R = any>(
+    fn: ANY_FN<A, R>,
+    ...args: A
+  ): R => {
     const disableProxy = consoleProxy.isProxyEnabled()
       ? null
       : consoleProxy.enableProxy();
     try {
-      return fn();
+      const fnThis = (fn as any).this;
+      return fn.apply<any, A, R>(fnThis, args);
     } finally {
       if (disableProxy) disableProxy();
     }
   };
 
-  const wrapFn = <R = any>(fn: ANY_FN<any, R>) => {
-    return function () {
-      const args = Array.from(arguments);
-      return execFn(() => (fn as any).apply((fn as any).this, args));
+  const wrapFn = <A extends any[] = any[], R = any>(fn: ANY_FN<A, R>) => {
+    return function (...args: A) {
+      const fnThis = (fn as any).this;
+      return execFn(() => fn.apply(fnThis, args));
     };
   };
 

@@ -46,16 +46,56 @@ describe("ConsoleTemplate Tests", () => {
     }
   });
 
-  test("execTemplate", () => {
+  test("execFn", () => {
     function testFn() {
-      proxyTargetMock.log("test");
+      proxyTargetMock.log();
+    }
+
+    consoleTemplate.execFn(testFn);
+
+    expect(proxyTargetMock.log).toHaveBeenCalledTimes(1);
+  });
+
+  test("execFn with args", () => {
+    function testFn(arg1: string, arg2: string) {
+      proxyTargetMock.log(arg1, "test", arg2);
+    }
+
+    consoleTemplate.execFn(testFn, "Hello", "World");
+
+    expect(proxyTargetMock.log).toBeCalledWith("Hello", "test", "World");
+  });
+
+  test("execFn return value", () => {
+    function testFn() {
       return "test logged";
     }
 
     const result = consoleTemplate.execFn(testFn);
 
     expect(result).toBe("test logged");
-    expect(proxyTargetMock.log).toBeCalledWith("test");
+  });
+
+  test("execFn bound function", () => {
+    type TestType = {
+      msg: string
+    }
+
+    function testFn(this: TestType) {
+      return this.msg;
+    }
+
+    const result = consoleTemplate.execFn(testFn.bind({
+      msg: "Hello World"
+    }));
+
+    expect(result).toBe("Hello World");
+    
+    const result2 = consoleTemplate.execFn(testFn.bind({
+      msg: "World Hello"
+    }));
+
+    expect(result2).toBe("World Hello");
   });
 
   test("redirected Template", () => {
@@ -133,5 +173,21 @@ describe("ConsoleTemplate Tests", () => {
       proceed: expect.any(Function),
     });
     expect(proxyTargetMock.log).not.toBeCalledWith("wrapped function logged");
+  });
+
+  test("wrapFn with bound fn", () => {
+    type TestType = {
+      msg: string
+    }
+
+    function testFn(this: TestType) {
+      return this.msg;
+    }
+
+    const wrappedFn = consoleTemplate.wrapFn(testFn.bind({msg:"Hello bound fn"}));
+
+    const result = wrappedFn();
+
+    expect(result).toBe("Hello bound fn");
   });
 });

@@ -1,22 +1,22 @@
-const { NODE_ENV } = process.env
+const { NODE_ENV } = process.env;
 
 module.exports = {
   presets: [
-    '@babel/typescript',
     [
-      '@babel/env',
+      "@babel/env",
       {
         targets: {
-          browsers: ['ie >= 11']
+          browsers: ["ie >= 11"],
         },
         modules: false,
-        loose: true
-      }
-    ]
+        loose: true,
+      },
+    ],
+    "@babel/typescript",
   ],
   plugins: [
     // don't use `loose` mode here - need to copy symbols when spreading
-    '@babel/proposal-object-rest-spread',
-    NODE_ENV === 'test' && '@babel/transform-modules-commonjs'
-  ].filter(Boolean)
-}
+    "@babel/proposal-object-rest-spread",
+    NODE_ENV === "test" && "@babel/transform-modules-commonjs",
+  ].filter(Boolean),
+};

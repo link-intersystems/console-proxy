@@ -7,7 +7,7 @@
 
 The console template module provides template methods that ensure that the console is properly proxies when the target function executes.
 
-## execFn( fn: (...args: A[]) => R ) => (...args: A[]) => R
+## execFn<A extends any[], R>(fn: ANY_FN<A, R>, ...args: A) => R;
 
 The execFn let you execute a single function with a proxied console.
 
@@ -42,14 +42,14 @@ The execFn signature allows any function with any args and supports return types
     logEnablementHandler.setLevelEnabled("log", true);
 
     // will log "Hello World" and return "Hello World"
-    const result1 = consoleTemplate.execFn(() => logMsg("World"))
+    const result1 = consoleTemplate.execFn(logMsg, "World")
 
     logEnablementHandler.setLevelEnabled("log", false);
 
     // will not log anything, but return "Hello World"
     const result2 = consoleTemplate.execFn(() => logMsg("World"))
 
-## wrapFn( fn: (...args: A[]) => R ) => (...args: A[]) => R
+## wrapFn<A extends any[], R>(fn: ANY_FN<A, R>) => ANY_FN<A, R>
 
 Creates a function wrapper that ensures that the console is proxied whenever the wrapped function is executed.
 
