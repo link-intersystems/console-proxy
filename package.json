@@ -16,7 +16,6 @@
   "unpkg": "dist/console-proxy.js",
   "module": "es/console-proxy.js",
   "types": "types/index.d.ts",
-
   "scripts": {
     "clean": "rimraf lib dist es coverage types",
     "clean:all": "npm run clean -- node_modules",
@@ -63,7 +62,6 @@
     "jest": "^27.0.0",
     "netlify-plugin-cache": "^1.0.3",
     "prettier": "2.3.2",
-    "redux-thunk": "^2.3.0",
     "rimraf": "^3.0.2",
     "rollup": "^2.7.2",
     "rollup-plugin-terser": "^7.0.2",
